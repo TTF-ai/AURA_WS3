@@ -1,0 +1,28 @@
+# AURA Voice Interaction Parameters
+
+voice_node:
+  ros__parameters:
+    # --- Providers ---
+    stt_provider: "groq"
+    stt_model: "whisper-large-v3-turbo"
+
+    llm_provider: "groq"
+    llm_model: "openai/gpt-oss-20b"
+
+    # TTS: edge-tts provides both English and Kannada natively
+    tts_provider: "edge"
+
+    # --- Language ---
+    default_language: "en"
+
+    # --- Timeouts ---
+    stt_timeout_seconds: 10.0
+    llm_timeout_seconds: 10.0
+    tts_timeout_seconds: 10.0
+
+    # --- Audio ---
+    max_recording_seconds: 10.0
+    vad_energy_threshold: 0.01
+
+    # --- Debug ---
+    debug_audio_logging: false

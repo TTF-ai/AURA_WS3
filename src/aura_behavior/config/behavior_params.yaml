@@ -1,0 +1,45 @@
+# AURA Behavior Estimation Parameters
+# Tuned for real-time responsiveness on CPU
+
+behavior_node:
+  ros__parameters:
+    # --- Pose Model ---
+    pose_model: "yolo11n-pose.pt"
+    pose_imgsz: 320
+    pose_confidence_threshold: 0.5
+
+    # --- Frame Processing ---
+    # At 30 FPS camera, skip=2 gives 15 FPS inference — well within
+    # MediaPipe Lite's ~20ms budget on CPU.
+    process_every_n_frames: 2
+
+    # --- Temporal Buffer ---
+    # Time-based: only keep observations from the last N seconds.
+    # Short window = fast transitions. 1.0s is responsive without jitter.
+    temporal_buffer_size: 30
+    behavior_history_seconds: 1.0
+
+    # --- Behavior Classifier ---
+    # Hysteresis: require N consecutive frames to agree before
+    # transitioning. At ~15 FPS, 3 frames = ~0.2s confirmation delay.
+    behavior_confirmation_frames: 3
+    min_valid_keypoints: 3
+
+    # --- Behavior Thresholds ---
+    walking_min_movement: 8.0
+    lying_body_angle_threshold: 55.0
+    low_movement_threshold: 10.0
+
+    # --- Fall Detection (separate, conservative window) ---
+    fall_verification_seconds: 2.0
+    fall_min_vertical_velocity: 150.0
+    fall_body_angle_threshold: 50.0
+    event_cooldown_seconds: 10.0
+
+    # --- Target ---
+    target_lost_timeout: 1.0
+
+    # --- Debug ---
+    debug_publish: true
+    debug_publish_every_n: 3    # Debug image at ~5 Hz (every 3rd inference)
+    perf_logging: true

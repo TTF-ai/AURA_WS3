@@ -1,0 +1,223 @@
+Install OpenCV
+
+If you don't already have it:
+
+sudo apt install python3-opencv
+
+Install cv_bridge
+sudo apt install ros-jazzy-cv-bridge
+
+If you're using a virtual environment
+
+Activate it first:
+
+source <your_venv>/bin/activate
+
+Then install:
+
+pip install opencv-python
+
+
+
+4. Force CMake to Python 3.12
+export Python3_EXECUTABLE=/usr/bin/python3.12
+export PYTHON_EXECUTABLE=/usr/bin/python3.12
+
+Verify:
+
+echo $Python3_EXECUTABLE
+echo $PYTHON_EXECUTABLE
+
+
+
+5. Build only the message package
+colcon build \
+  --packages-select aura_face_msgs \
+  --symlink-install \
+  --cmake-args \
+  -DPython3_EXECUTABLE=/usr/bin/python3.12
+
+
+----------------------------------------------------------------------------------------------------
+FACE_AUTH
+
+source ~/venv_aura/bin/activate
+source /opt/ros/jazzy/setup.bash
+source ~/AURA_WS3/install/setup.bash
+ros2 launch aura_face_auth face_auth.launch.py development_mode:=true
+
+
+# 1. Activate the environment and source setups
+source ~/venv_aura/bin/activate
+source /opt/ros/jazzy/setup.bash
+source ~/AURA_WS3/install/setup.bash
+
+# 2. Run the enrollment node
+ros2 run aura_face_auth enroll_node --ros-args -p username:=your_name_here -p num_samples:=15
+
+
+---------------------------------------------------------------------------------------------------
+
+
+sqlite3 ~/.aura/face_auth.db "SELECT u.username, COUNT(e.id) as embeddings_count FROM users u LEFT JOIN embeddings e ON u.user_id = e.user_id GROUP BY u.username;"
+
+
+import sys
+sys.path.append('/home/thirumalesh/AURA_WS3/src/aura_face_auth')
+from aura_face_auth.database import FaceAuthDatabase
+
+db = FaceAuthDatabase()
+users = db.get_all_users()
+
+if users:
+    for u in users:
+        count = db.get_embedding_count(u['user_id'])
+        print(f"User: {u['username']} | Templates: {count}")
+else:
+    print("no users found")
+
+---------------------------------------------------------------------------------------------------------------------------
+
+To delete the user 
+
+python3 -c "
+import sys
+sys.path.append('/home/thirumalesh/AURA_WS3/src/aura_face_auth')
+from aura_face_auth.database import FaceAuthDatabase
+db = FaceAuthDatabase()
+db.delete_user('karthik')
+print('Deleted karthik from database.')
+"
+
+-------------------------------------------------------------------------------
+
+
+source ~/venv_aura/bin/activate
+source /opt/ros/jazzy/setup.bash
+source ~/AURA_WS3/install/setup.bash
+ros2 launch aura_face_auth face_auth.launch.py development_mode:=true
+
+
+
+source ~/venv_aura/bin/activate
+source /opt/ros/jazzy/setup.bash
+source ~/AURA_WS3/install/setup.bash
+ros2 launch aura_follow human_follow.launch.py
+
+
+
+source /opt/ros/jazzy/setup.bash
+ros2 run rqt_image_view rqt_image_view
+
+
+
+
+<_________________________________THIS IS AURA LAUNCH FILES TO EXECUTE________________________________>
+
+1. Face Authentication Node
+
+source ~/venv_aura/bin/activate
+cd ~/AURA_WS3
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 launch aura_face_auth face_auth.launch.py development_mode:=true
+
+
+-----------------------------------------------------------------------------
+
+
+2. Human Following Node
+
+source ~/venv_aura/bin/activate
+cd ~/AURA_WS3
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 launch aura_follow human_follow.launch.py
+
+
+-----------------------------------------------------------------------------
+
+
+3. Behavior Estimation Node
+
+source ~/venv_aura/bin/activate
+cd ~/AURA_WS3
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 launch aura_behavior behavior.launch.py
+
+
+-----------------------------------------------------------------------------
+
+4. Voice Interaction Node
+
+source ~/venv_aura/bin/activate
+cd ~/AURA_WS3
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 launch aura_voice voice.launch.py
+
+
+
+-------------------------------------------------------------------------
+
+
+5. Alert System Node
+
+
+source ~/venv_aura/bin/activate
+cd ~/AURA_WS3
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 launch aura_alert alert.launch.py
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------
+
+cd ~/AURA_WS3
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+
+ros2 service call /aura_alert/test std_srvs/srv/Trigger "{}"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export GROQ_API_KEY="api_key"
+ros2 launch aura_voice voice.launch.py
+
+
+
+
+
+
+
+
+
+
+
+
+cd ~/AURA_WS3
+colcon build --symlink-install
+source install/setup.bash
+
+# Run behavior node in one terminal:
+ros2 launch aura_behavior behavior.launch.py
+
+# Run voice node in the other:
+ros2 launch aura_voice voice.launch.py

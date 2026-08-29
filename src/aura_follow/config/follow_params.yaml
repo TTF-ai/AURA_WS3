@@ -1,0 +1,39 @@
+# AURA Human Following Parameters
+# All values are starting points — tune on physical robot.
+
+human_follow_node:
+  ros__parameters:
+
+    # --- YOLO Detection ---
+    yolo_model: "/home/thirumalesh/AURA_WS3/yolo11n.onnx"
+    person_confidence_threshold: 0.5
+    device: "auto"                    # auto | cpu | cuda
+    # At 30 FPS camera, skip=2 gives ~15 FPS person detection.
+    # YOLO11n at imgsz=320 runs in ~30ms on this CPU.
+    process_every_n_frames: 2
+
+    # --- Camera ---
+    camera_horizontal_fov_deg: 70.0
+
+    # --- LiDAR ---
+    lidar_angle_window_deg: 15.0
+
+    # --- Follow Distance ---
+    desired_distance: 1.5            # meters
+    min_follow_distance: 0.8         # stop if closer
+    max_follow_distance: 3.0         # too far to follow
+
+    # --- Safety ---
+    emergency_distance: 0.5          # hard stop
+
+    # --- Controller ---
+    horizontal_deadzone: 40          # pixels (reduced for faster reaction)
+    Kp_linear: 0.45                  # increased for faster forward speed
+    Kp_angular: 0.005                # increased for faster rotation
+    max_linear_speed: 0.5            # m/s
+    max_angular_speed: 1.0           # rad/s
+    rotation_slowdown_threshold: 150 # pixels
+
+    # --- Target Tracking ---
+    target_lost_timeout: 1.0         # seconds
+    reacquire_timeout: 5.0           # seconds

@@ -1,0 +1,46 @@
+# AURA Face Authentication Parameters
+# All thresholds marked DEV ONLY must be calibrated for production.
+
+camera_node:
+  ros__parameters:
+    camera_index: 0
+    frame_width: 640
+    frame_height: 480
+    fps: 30
+
+face_detector_node:
+  ros__parameters:
+    det_thresh: 0.5
+    det_size: 640
+    # Before authentication: detect faces every 2nd frame (~15 FPS)
+    process_every_n_frames: 2
+    # After authentication: reduce to every 4th frame (~7.5 FPS)
+    # to free CPU for follow/behavior pipeline
+    process_every_n_frames_auth: 4
+    execution_provider: "auto"
+
+recognizer_node:
+  ros__parameters:
+    recognition_interval: 0.5
+    execution_provider: "auto"
+    model_path: ""  # Path to ArcFace ONNX model — must be configured
+
+liveness_node:
+  ros__parameters:
+    liveness_threshold: 0.5  # DEV ONLY — model-specific, calibrate
+    liveness_interval: 0.5
+    development_mode: true
+    dev_liveness_score: 0.0
+    model_path: ""  # Path to liveness ONNX model
+
+auth_node:
+  ros__parameters:
+    similarity_threshold: 0.4  # DEV ONLY — calibrate with FAR/FRR
+    authentication_timeout: 60.0
+    reverify_interval: 10.0
+    allow_multiple_faces: false
+    min_quality: 0.3
+    liveness_threshold: 0.5
+    max_signal_age: 2.0
+    face_timeout: 5.0
+    lock_cooldown: 3.0

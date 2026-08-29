@@ -1,0 +1,120 @@
+.env
+*.env
+# =========================
+# Python
+# =========================
+
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Environment variables / secrets
+.env
+.env.*
+!.env.example
+
+# =========================
+# ROS 2 / Colcon
+# =========================
+
+build/
+install/
+log/
+
+# =========================
+# IDE
+# =========================
+
+.vscode/
+.idea/
+
+# =========================
+# OS
+# =========================
+
+.DS_Store
+Thumbs.db
+
+# =========================
+# Python tooling
+# =========================
+
+.coverage
+htmlcov/
+.pyre/
+.pytype/
+
+# =========================
+# Temporary files
+# =========================
+
+*.tmp
+*.temp
+*.swp
+*~
+
+# =========================
+# ROS bags / recordings
+# =========================
+
+*.bag
+*.db3
+*.mcap
+
+# =========================
+# Large generated model/cache files
+# =========================
+
+.cache/
+
+# ROS 2
+build/
+install/
+log/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# AI model files
+*.pt
+*.onnx
+*.task
+*.engine
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# External dependencies - installed separately
+src/ydlidar_ros2_driver/
+src/YDLidar-SDK/
