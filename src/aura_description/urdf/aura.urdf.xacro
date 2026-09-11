@@ -1,0 +1,70 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="aura">
+
+  <!--
+    AURA 4-Wheel Differential-Drive Robot
+    ======================================
+    Coordinate convention: +X = front, +Y = left, +Z = up
+    base_link is the IMU-center reference frame.
+
+    Robot dimensions:
+      Wheel diameter:  0.085 m  (radius 0.0425 m)
+      Track width:     0.327 m  (left-right wheel center distance)
+      Wheelbase:       0.277 m  (front-rear wheel center distance)
+  -->
+
+  <!-- Include sub-xacro files -->
+  <xacro:include filename="$(find aura_description)/urdf/materials.xacro"/>
+  <xacro:include filename="$(find aura_description)/urdf/wheels.xacro"/>
+  <xacro:include filename="$(find aura_description)/urdf/sensors.xacro"/>
+
+  <!-- ============================================================ -->
+  <!-- base_link: virtual reference frame at IMU center              -->
+  <!-- ============================================================ -->
+  <link name="base_link"/>
+
+  <!-- ============================================================ -->
+  <!-- chassis_link: the physical robot body                         -->
+  <!-- ============================================================ -->
+  <link name="chassis_link">
+    <visual>
+      <geometry>
+        <box size="0.300 0.260 0.100"/>
+      </geometry>
+      <origin xyz="0 0 0.030" rpy="0 0 0"/>
+      <material name="dark_grey"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.300 0.260 0.100"/>
+      </geometry>
+      <origin xyz="0 0 0.030" rpy="0 0 0"/>
+    </collision>
+    <inertial>
+      <mass value="5.0"/>
+      <origin xyz="0 0 0.030" rpy="0 0 0"/>
+      <inertia ixx="0.02" ixy="0" ixz="0"
+               iyy="0.04" iyz="0"
+               izz="0.04"/>
+    </inertial>
+  </link>
+
+  <joint name="chassis_joint" type="fixed">
+    <parent link="base_link"/>
+    <child  link="chassis_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ============================================================ -->
+  <!-- Wheels                                                        -->
+  <!--   FL: (+0.1385, +0.1635, -0.020)                             -->
+  <!--   FR: (+0.1385, -0.1635, -0.020)                             -->
+  <!--   RL: (-0.1385, +0.1635, -0.020)                             -->
+  <!--   RR: (-0.1385, -0.1635, -0.020)                             -->
+  <!-- ============================================================ -->
+  <xacro:wheel name="wheel_fl" x="0.1385"  y="0.1635"  z="-0.020"/>
+  <xacro:wheel name="wheel_fr" x="0.1385"  y="-0.1635" z="-0.020"/>
+  <xacro:wheel name="wheel_rl" x="-0.1385" y="0.1635"  z="-0.020"/>
+  <xacro:wheel name="wheel_rr" x="-0.1385" y="-0.1635" z="-0.020"/>
+
+</robot>

@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!--
+    Sensors for the AURA robot.
+    base_link is the IMU-center reference frame.
+    imu_link:   (0, 0, 0)     relative to base_link
+    laser_link: (0, 0, 0.178) relative to base_link
+  -->
+
+  <!-- IMU sensor — coincident with base_link -->
+  <link name="imu_link"/>
+
+  <joint name="imu_joint" type="fixed">
+    <parent link="base_link"/>
+    <child  link="imu_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <!-- LiDAR sensor — mounted on top of the robot -->
+  <link name="laser_link">
+    <visual>
+      <geometry>
+        <cylinder radius="0.035" length="0.040"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <material name="red"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder radius="0.035" length="0.040"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </collision>
+    <inertial>
+      <mass value="0.15"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.00005" ixy="0" ixz="0"
+               iyy="0.00005" iyz="0"
+               izz="0.00005"/>
+    </inertial>
+  </link>
+
+  <joint name="laser_joint" type="fixed">
+    <parent link="base_link"/>
+    <child  link="laser_link"/>
+    <origin xyz="0 0 0.178" rpy="0 0 0"/>
+  </joint>
+
+</robot>
