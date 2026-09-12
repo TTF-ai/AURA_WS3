@@ -5,7 +5,7 @@ Publishes /robot_description and all static TFs defined in the URDF:
   base_link -> chassis_link
   base_link -> wheel_fl_link, wheel_fr_link, wheel_rl_link, wheel_rr_link
   base_link -> imu_link
-  base_link -> laser_link
+    base_link -> laser_frame
 
 Does NOT publish odom -> base_link (that is owned by aura_odom/wheel_odom).
 """
@@ -13,6 +13,7 @@ Does NOT publish odom -> base_link (that is owned by aura_odom/wheel_odom).
 import os
 from launch import LaunchDescription
 from launch_ros.actions import Node
+from launch_ros.parameter_descriptions import ParameterValue
 from launch.substitutions import Command
 from ament_index_python.packages import get_package_share_directory
 
@@ -21,7 +22,10 @@ def generate_launch_description():
     pkg_share = get_package_share_directory('aura_description')
     xacro_file = os.path.join(pkg_share, 'urdf', 'aura.urdf.xacro')
 
-    robot_description = Command(['xacro ', xacro_file])
+    robot_description = ParameterValue(
+        Command(['xacro ', xacro_file]),
+        value_type=str,
+    )
 
     robot_state_publisher = Node(
         package='robot_state_publisher',

@@ -1,0 +1,10 @@
+frontier_explorer:
+  ros__parameters:
+    map_topic: /map
+    min_frontier_size: 5
+    min_frontier_distance: 0.5
+    max_frontier_distance: 5.0
+    goal_tolerance: 0.4
+    exploration_period: 1.0
+    map_frame: map
+    base_frame: base_link

@@ -5,7 +5,7 @@
     Sensors for the AURA robot.
     base_link is the IMU-center reference frame.
     imu_link:   (0, 0, 0)     relative to base_link
-    laser_link: (0, 0, 0.178) relative to base_link
+    laser_frame: (0, 0, 0.178) relative to base_link
   -->
 
   <!-- IMU sensor — coincident with base_link -->
@@ -18,7 +18,7 @@
   </joint>
 
   <!-- LiDAR sensor — mounted on top of the robot -->
-  <link name="laser_link">
+  <link name="laser_frame">
     <visual>
       <geometry>
         <cylinder radius="0.035" length="0.040"/>
@@ -43,7 +43,7 @@
 
   <joint name="laser_joint" type="fixed">
     <parent link="base_link"/>
-    <child  link="laser_link"/>
+    <child  link="laser_frame"/>
     <origin xyz="0 0 0.178" rpy="0 0 0"/>
   </joint>
 
