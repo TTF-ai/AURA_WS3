@@ -310,20 +310,30 @@ class AuthNode(Node):
                 self._publish_status(now)
                 return
 
-            # Once the authenticated user is still visible and valid,
-            # keep that target locked and ignore extra people in frame.
-            if (not self.allow_multiple_faces
-                    and self.latest_num_faces > 1
-                    and self._is_authenticated_face_active(now)):
+            # Preserve the active user as long as the authenticated face is still
+            # valid. A second person may appear in-frame without invalidating the
+            # current identity.
+            if self.authenticated_face_id >= 0 and self._is_authenticated_face_active(now):
+                if now - self.last_reverify_time >= self.reverify_interval:
+                    self._reverify(now)
                 self._publish_status(now)
                 return
 
-            # Multi-face check: only lock if the authenticated target is no longer
-            # visible and another person is present instead.
-            if (not self.allow_multiple_faces
-                    and self.latest_num_faces > 1):
+            # If the authenticated target is not currently valid but some face is
+            # still detected, keep the current user until a true loss or failed
+            # re-verification is confirmed. Do not clear auth simply because a new
+            # face joins the camera view.
+            if self.authenticated_face_id >= 0 and self.latest_num_faces > 0:
+                if now - self.last_reverify_time >= self.reverify_interval:
+                    self._reverify(now)
+                self._publish_status(now)
+                return
+
+            # Only lock when there is no valid authenticated face and the loss has
+            # persisted long enough to be considered real.
+            if not self.allow_multiple_faces and self.latest_num_faces > 1:
                 self.get_logger().warning(
-                    "Multiple faces detected and target not valid → LOCKED"
+                    "Multiple faces detected while active user is not valid → LOCKED"
                 )
                 self.state = AuthState.LOCKED
                 self.lock_time = now

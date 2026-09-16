@@ -26,6 +26,7 @@ voice_node:
     # speech is not rejected before Whisper.
     vad_energy_threshold: 0.005
     wake_word_min_duration_ms: 150.0
+    require_wake_word: false
 
     # --- Debug ---
     debug_audio_logging: false

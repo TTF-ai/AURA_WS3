@@ -63,6 +63,7 @@ class VoiceNode(Node):
         self.declare_parameter("vad_energy_threshold", 0.01)
         self.declare_parameter("wake_word", "aura")
         self.declare_parameter("wake_word_min_duration_ms", 250.0)
+        self.declare_parameter("require_wake_word", False)
         self.declare_parameter("input_mode", "speech")
         self.declare_parameter("debug_audio_logging", False)
 
@@ -76,6 +77,7 @@ class VoiceNode(Node):
         self.follow_state = "IDLE"
         self.voice_status = "IDLE"
         self.input_mode = self.get_parameter("input_mode").value.lower()
+        self.require_wake_word = bool(self.get_parameter("require_wake_word").value)
         self._processing = False
 
         # -------------------------------------------------------
@@ -282,14 +284,12 @@ class VoiceNode(Node):
     # =============================================================
 
     def _is_wake_word_command(self, text: str) -> bool:
-        """Lightweight wake-word gate for the command phrase.
-
-        This is intentionally a post-VAD gate: the microphone pipeline must
-        first observe speech activity, and only then do we allow command
-        processing if the detected phrase begins with the wake word.
-        """
+        """Allow regular commands unless wake-word enforcement is explicitly enabled."""
         if not text:
             return False
+
+        if not self.require_wake_word:
+            return True
 
         normalized = re.sub(r'[^a-z0-9\s]', ' ', text.lower()).strip()
         normalized = re.sub(r'\s+', ' ', normalized)
@@ -348,16 +348,40 @@ class VoiceNode(Node):
             "post to group",
             "tell the group",
             "share this",
+            "share to family",
             "send it to telegram",
             "send message to telegram",
             "message bhejo",
+            "message bhejdo",
             "message send karo",
             "message send kardo",
             "message send maadi",
+            "message send madi",
             "message send cheyyu",
             "message send chey",
             "message kodo",
+            "message kodu",
+            "family ge message send maadi",
+            "family ge message bhejo",
+            "families ge message send maadi",
+            "group ge message bhejo",
+            "telegram ge message bhejo",
+            "telegram ge message send",
+            "telegram ge send message",
+            "family message bhejo",
+            "family message send",
+            "group message bhejo",
             "message send",
+            "send to family",
+            "send to group",
+            "family ge bhejo",
+            "family ge send",
+            "group ge bhejo",
+            "family ge photo send",
+            "group ge photo send",
+            "telegram ge photo send",
+            "telegram ge photo bhejo",
+            "bhagya ge message bhejo",
         ]
 
         match = None
@@ -391,6 +415,13 @@ class VoiceNode(Node):
                 "pic",
                 "photo lo",
                 "image lo",
+                "photo bhejo",
+                "photo send",
+                "photo kodo",
+                "photo kodu",
+                "photo bhejdo",
+                "camera send",
+                "pic send",
             ]
         )
 
