@@ -21,6 +21,7 @@ from cv_bridge import CvBridge
 
 from aura_face_msgs.msg import FaceCrop
 from aura_face_msgs.msg import FaceLiveness
+from aura_face_msgs.msg import AuthenticationStatus
 
 
 class LivenessNode(Node):
@@ -90,6 +91,13 @@ class LivenessNode(Node):
         # ---------------------------------------------------------
 
         self.liveness_model = None
+        self.auth_status = None
+        self.auth_sub = self.create_subscription(
+            AuthenticationStatus,
+            "/auth/status",
+            self.auth_status_callback,
+            10,
+        )
         self._load_model()
 
         # ---------------------------------------------------------
@@ -132,6 +140,14 @@ class LivenessNode(Node):
             f"interval={self.liveness_interval}s | "
             f"dev_mode={self.development_mode}"
         )
+
+    # =============================================================
+    # AUTH STATUS GATE
+    # =============================================================
+
+    def auth_status_callback(self, msg):
+        """Gate liveness while the target is already authenticated."""
+        self.auth_status = msg
 
     # =============================================================
     # MODEL LOADING
@@ -180,6 +196,9 @@ class LivenessNode(Node):
 
     def crop_callback(self, msg):
         """Process incoming FaceCrop for liveness check."""
+
+        if self.auth_status is not None and self.auth_status.authenticated:
+            return
 
         # Throttle
         now = time.time()

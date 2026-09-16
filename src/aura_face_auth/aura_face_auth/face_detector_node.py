@@ -255,7 +255,19 @@ class FaceDetectorNode(Node):
 
         height, width = frame.shape[:2]
 
+        # Only draw the authenticated username when there is a single active face
+        # in frame; different faces must never inherit the current user label.
+        auth_label_allowed = (
+            self.auth_status is not None and self.auth_status.authenticated and len(faces) == 1
+        )
+
         for face_id, face in enumerate(faces):
+
+            # Once a user is authenticated, keep only the active target visible
+            # on the frame and ignore all other faces in the scene.
+            if (self.auth_status and self.auth_status.authenticated
+                    and face_id != self.auth_status.face_id and len(faces) > 1):
+                continue
 
             # Bounding box
 
@@ -349,7 +361,7 @@ class FaceDetectorNode(Node):
             # Draw ID + confidence
             # -----------------------------------------------------
 
-            if self.auth_status and self.auth_status.authenticated and self.auth_status.face_id == face_id:
+            if auth_label_allowed and self.auth_status.face_id == face_id:
                 label = f"{self.auth_status.username} ({confidence:.2f})"
             else:
                 label = f"ID: {face_id} {confidence:.2f}"

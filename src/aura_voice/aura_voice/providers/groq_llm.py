@@ -18,28 +18,29 @@ ALLOWED_INTENTS = [
     "CHANGE_LANGUAGE",
     "HELP",
     "STATUS",
+    "SEND_MESSAGE",
     "UNKNOWN",
 ]
 
 SYSTEM_PROMPT = """You are AURA, a ROS 2 assistive robot. You help elderly and disabled users.
 
-RULES:
-1. You do NOT control motors directly.
-2. You can ONLY select from these intents: {intents}
-3. Return ONLY valid JSON. No markdown, no explanation.
-4. Never invent intents not in the list.
-5. Never output ROS commands or velocities.
-6. Keep robot command responses short and friendly.
-7. Respond in the user's preferred language.
+Strict rules:
+1. You can ONLY choose from these intents: {intents}
+2. Return EXACTLY one valid JSON object and nothing else.
+3. Do not add markdown, code fences, commentary, or any text before/after the JSON.
+4. If the user input is a greeting or a simple conversation, choose intent "UNKNOWN" unless the phrase clearly asks for a robot action.
+5. Do not invent intents outside the list.
+6. Do not output ROS commands, velocities, or action code.
+7. Keep response_text short, friendly, and in the user's preferred language.
 
 JSON format:
 {{
   "intent": "<INTENT>",
-  "parameters": {{}},
+  "parameters": {{}} ,
   "response_text": "<short response in user's preferred language>"
 }}
 
-For CHANGE_LANGUAGE, include: "parameters": {{"language": "en"}} or {{"language": "kn"}} or {{"language": "en+kn"}}
+For CHANGE_LANGUAGE, use: "parameters": {{"language": "en"}} or {{"language": "kn"}} or {{"language": "en+kn"}}
 
 Current context:
 - Authenticated user: {authenticated}
@@ -59,6 +60,28 @@ class GroqLLM(LLMProvider):
         self.model = model
         self.timeout = timeout
         self.api_key = os.environ.get("GROQ_API_KEY", "")
+
+    @staticmethod
+    def _extract_json_object(content: str):
+        """Extract a JSON object from content that may contain markdown or text around it."""
+        if not content:
+            raise ValueError("empty content")
+
+        cleaned = content.strip()
+        if cleaned.startswith("```"):
+            cleaned = cleaned.strip("`")
+            if cleaned.lower().startswith("json"):
+                cleaned = cleaned[4:].strip()
+
+        start = cleaned.find('{')
+        end = cleaned.rfind('}')
+        if start != -1 and end != -1 and end > start:
+            cleaned = cleaned[start:end + 1]
+
+        parsed = json.loads(cleaned)
+        if not isinstance(parsed, dict):
+            raise ValueError("JSON payload is not an object")
+        return parsed
 
     def generate_intent(
         self,
@@ -93,7 +116,6 @@ class GroqLLM(LLMProvider):
             ],
             "temperature": 0.1,
             "max_tokens": 256,
-            "response_format": {"type": "json_object"},
         }
 
         try:
@@ -105,11 +127,9 @@ class GroqLLM(LLMProvider):
             )
             response.raise_for_status()
             result = response.json()
-
             content = result["choices"][0]["message"]["content"]
-            parsed = json.loads(content)
+            parsed = self._extract_json_object(content)
 
-            # Validate intent
             intent = parsed.get("intent", "UNKNOWN")
             if intent not in ALLOWED_INTENTS:
                 intent = "UNKNOWN"
@@ -117,36 +137,15 @@ class GroqLLM(LLMProvider):
             return {
                 "intent": intent,
                 "parameters": parsed.get("parameters", {}),
-                "response_text": parsed.get("response_text", ""),
+                "response_text": parsed.get("response_text", "I didn't understand that."),
             }
 
-        except (json.JSONDecodeError, KeyError):
-            # Retry once on invalid JSON
-            try:
-                response = httpx.post(
-                    self.API_URL,
-                    headers=headers,
-                    json=payload,
-                    timeout=self.timeout,
-                )
-                response.raise_for_status()
-                result = response.json()
-                content = result["choices"][0]["message"]["content"]
-                parsed = json.loads(content)
-                intent = parsed.get("intent", "UNKNOWN")
-                if intent not in ALLOWED_INTENTS:
-                    intent = "UNKNOWN"
-                return {
-                    "intent": intent,
-                    "parameters": parsed.get("parameters", {}),
-                    "response_text": parsed.get("response_text", ""),
-                }
-            except Exception:
-                return {
-                    "intent": "UNKNOWN",
-                    "parameters": {},
-                    "response_text": "I didn't understand that.",
-                }
+        except (json.JSONDecodeError, KeyError, ValueError):
+            return {
+                "intent": "UNKNOWN",
+                "parameters": {},
+                "response_text": "I didn't understand that.",
+            }
 
         except httpx.TimeoutException:
             raise RuntimeError("Groq LLM request timed out")

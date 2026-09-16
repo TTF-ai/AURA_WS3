@@ -94,6 +94,10 @@ def generate_launch_description():
         }],
     )
 
+    recognizer_model = os.path.expanduser(
+        "~/.insightface/models/buffalo_s/w600k_mbf.onnx"
+    )
+
     recognizer_node = Node(
         package="aura_face_auth",
         executable="recognizer_node",
@@ -102,7 +106,7 @@ def generate_launch_description():
         parameters=[{
             "recognition_interval": 0.5,
             "execution_provider": "auto",
-            "model_path": "",
+            "model_path": recognizer_model,
         }],
     )
 

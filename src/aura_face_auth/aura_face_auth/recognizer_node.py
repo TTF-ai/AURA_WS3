@@ -19,6 +19,7 @@ from cv_bridge import CvBridge
 
 from aura_face_msgs.msg import FaceCrop
 from aura_face_msgs.msg import FaceEmbedding
+from aura_face_msgs.msg import AuthenticationStatus
 
 from aura_face_auth.utils import (
     align_face,
@@ -84,6 +85,13 @@ class RecognizerNode(Node):
         # ---------------------------------------------------------
 
         self.rec_model = None
+        self.auth_status = None
+        self.auth_sub = self.create_subscription(
+            AuthenticationStatus,
+            "/auth/status",
+            self.auth_status_callback,
+            10,
+        )
         self._load_model()
 
         # ---------------------------------------------------------
@@ -105,6 +113,14 @@ class RecognizerNode(Node):
             f"interval={self.recognition_interval}s | "
             f"provider={self.execution_provider}"
         )
+
+    # =============================================================
+    # AUTH STATUS GATE
+    # =============================================================
+
+    def auth_status_callback(self, msg):
+        """Gate recognition while the user is already locked in."""
+        self.auth_status = msg
 
     # =============================================================
     # MODEL LOADING
@@ -157,30 +173,38 @@ class RecognizerNode(Node):
                     f"Loading ArcFace model from: {model_file}"
                 )
             else:
-                # Try to find model in InsightFace default cache
+                # Try several InsightFace default cache locations and
+                # known ArcFace filenames. Buffalo S is the common local
+                # model on this system and exposes w600k_mbf.onnx rather
+                # than the older w600k_r50.onnx name.
                 import os
-                cache_dir = os.path.expanduser(
-                    "~/.insightface/models/buffalo_l"
-                )
-                model_file = os.path.join(
-                    cache_dir, "w600k_r50.onnx"
-                )
+                candidate_dirs = [
+                    os.path.expanduser("~/.insightface/models/buffalo_l"),
+                    os.path.expanduser("~/.insightface/models/buffalo_s"),
+                ]
+                candidate_names = [
+                    "w600k_r50.onnx",
+                    "w600k_mbf.onnx",
+                    "model.onnx",
+                ]
+                model_file = None
 
-                if not os.path.exists(model_file):
-                    # Try buffalo_s
-                    cache_dir = os.path.expanduser(
-                        "~/.insightface/models/buffalo_s"
-                    )
-                    model_file = os.path.join(
-                        cache_dir, "w600k_r50.onnx"
-                    )
+                for cache_dir in candidate_dirs:
+                    for name in candidate_names:
+                        candidate = os.path.join(cache_dir, name)
+                        if os.path.exists(candidate):
+                            model_file = candidate
+                            break
+                    if model_file:
+                        break
 
-                if not os.path.exists(model_file):
+                if not model_file:
                     self.get_logger().error(
-                        f"ArcFace model not found. "
-                        f"Set 'model_path' parameter or download "
-                        f"InsightFace models. "
-                        f"Searched: {model_file}"
+                        "ArcFace model not found. "
+                        "Set 'model_path' parameter or download an "
+                        "InsightFace buffalo model. "
+                        "Checked: ~/.insightface/models/buffalo_l, "
+                        "~/.insightface/models/buffalo_s"
                     )
                     return
 
@@ -210,6 +234,9 @@ class RecognizerNode(Node):
 
     def crop_callback(self, msg):
         """Process incoming FaceCrop message."""
+
+        if self.auth_status is not None and self.auth_status.authenticated:
+            return
 
         # Throttle recognition
         now = time.time()

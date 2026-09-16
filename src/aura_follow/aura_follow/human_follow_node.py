@@ -99,6 +99,7 @@ class HumanFollowNode(Node):
         self.declare_parameter("yolo_model", "yolo11n.pt")
         self.declare_parameter("process_every_n_frames", 1)
         self.declare_parameter("rotation_slowdown_threshold", 150)
+        self.declare_parameter("target_lock_timeout", 2.0)
 
         self.person_conf_thresh = self.get_parameter(
             "person_confidence_threshold"
@@ -145,6 +146,9 @@ class HumanFollowNode(Node):
         ).value
         self.rotation_slowdown_threshold = self.get_parameter(
             "rotation_slowdown_threshold"
+        ).value
+        self.target_lock_timeout = self.get_parameter(
+            "target_lock_timeout"
         ).value
 
         # ---------------------------------------------------------
@@ -239,6 +243,7 @@ class HumanFollowNode(Node):
         # Timing
         self.target_last_seen_time = 0.0
         self.target_lost_time = 0.0
+        self.target_lock_time = 0.0
         self.frame_counter = 0
 
         # FPS tracking
@@ -322,6 +327,8 @@ class HumanFollowNode(Node):
             )
             self.authenticated_username = msg.username
             self.auth_face_id = msg.face_id
+            self.target_track_id = None
+            self.target_lock_time = time.time()
             self.state = FollowState.TARGET_ACQUISITION
 
     def face_detections_callback(self, msg):
@@ -543,6 +550,13 @@ class HumanFollowNode(Node):
         if self.state == FollowState.TARGET_ACQUISITION:
             self._publish_zero_vel()
             self._attempt_target_acquisition()
+            if self.target_track_id is None and (time.time() - self.target_lock_time) >= self.target_lock_timeout:
+                self.get_logger().warning(
+                    "Target lock timeout reached without valid association — stop and wait for re-authentication",
+                    throttle_duration_sec=5.0,
+                )
+                self._stop_following()
+                self.state = FollowState.WAITING_FOR_AUTH
             return
 
         # -------------------------------------------------------
@@ -607,14 +621,14 @@ class HumanFollowNode(Node):
     # =============================================================
 
     def _attempt_target_acquisition(self):
-        """Associate authenticated face with a person track."""
+        """Associate the authenticated face with exactly one person track."""
 
-        # Need face detections and person tracks
+        # Need fresh face detections and YOLO tracks
         if (self.latest_face_detections is None
                 or len(self.latest_tracks) == 0):
             return
 
-        # Find the authenticated face bbox
+        # Fail closed: only the authenticated face ID is valid.
         auth_face = None
         for face in self.latest_face_detections.faces:
             if face.id == self.auth_face_id:
@@ -622,47 +636,46 @@ class HumanFollowNode(Node):
                 break
 
         if auth_face is None:
-            # Try any face if only one is detected
-            if len(self.latest_face_detections.faces) == 1:
-                auth_face = self.latest_face_detections.faces[0]
-            else:
-                return
+            self.get_logger().warning(
+                "Authenticated face not present in current detections — not acquiring a target",
+                throttle_duration_sec=3.0,
+            )
+            return
 
-        # Face center
         face_cx = auth_face.x + auth_face.width / 2.0
         face_cy = auth_face.y + auth_face.height / 2.0
 
-        # Find person track containing the face center
+        # Only accept a track that actually overlaps the face center.
         candidates = []
-
         for track in self.latest_tracks:
             if (track["x1"] <= face_cx <= track["x2"]
                     and track["y1"] <= face_cy <= track["y2"]):
                 candidates.append(track)
 
         if len(candidates) == 0:
-            # Fallback: find closest person bbox to face center
-            return
-
-        if len(candidates) > 1:
-            # Ambiguous — fail closed
-            self.get_logger().warning(
-                f"Multiple person tracks ({len(candidates)}) "
-                f"contain the face — not acquiring",
-                throttle_duration_sec=3.0
+            self.get_logger().debug(
+                "No YOLO track overlaps the authenticated face; waiting for exact match",
+                throttle_duration_sec=3.0,
             )
             return
 
-        # Exactly one match
+        if len(candidates) > 1:
+            self.get_logger().warning(
+                f"Multiple person tracks ({len(candidates)}) overlap the auth face — fail closed",
+                throttle_duration_sec=3.0,
+            )
+            return
+
         target = candidates[0]
         self.target_track_id = target["track_id"]
         self.target_last_seen_time = time.time()
         self.target_lost_time = 0.0
+        self.target_lock_time = time.time()
         self.state = FollowState.FOLLOWING
 
         self.get_logger().info(
             f"Target acquired: "
-            f"user={self.authenticated_username} → "
+            f"user={self.authenticated_username} -> "
             f"track_id={self.target_track_id}"
         )
 
@@ -881,11 +894,12 @@ class HumanFollowNode(Node):
         return None
 
     def _stop_following(self):
-        """Clear target state."""
+        """Clear target state without auto-transferring to another person."""
         self.target_track_id = None
         self.authenticated_username = ""
         self.auth_face_id = -1
         self.target_lost_time = 0.0
+        self.target_lock_time = time.time()
 
     def _publish_zero_vel(self):
         """Publish zero velocity."""

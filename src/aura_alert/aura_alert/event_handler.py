@@ -151,3 +151,53 @@ class EventHandler:
         else:
             self.node.get_logger().error('Test alert failed to send.')
             return False
+
+    def handle_user_message(
+        self,
+        user_name: str,
+        message_text: str,
+        location: str,
+        include_photo: bool = False,
+        timestamp_sec: float = None
+    ) -> bool:
+        """Send a user-authored message to Telegram in a formatted timestamped block."""
+        self.node.get_logger().info(f'📨 Sending user message from {user_name} to Telegram group...')
+
+        caption = MessageBuilder.build_user_message(
+            user_name=user_name,
+            message_text=message_text,
+            location=location,
+            timestamp_sec=timestamp_sec
+        )
+
+        max_retries = self.node.get_parameter('max_retries').value
+        retry_delay = self.node.get_parameter('retry_delay_seconds').value
+        send_photo_enabled = self.node.get_parameter('send_photo').value
+
+        photo_bytes = None
+        if include_photo and send_photo_enabled:
+            image_quality = self.node.get_parameter('image_quality').value
+            photo_bytes = self.ic.get_best_frame(quality=image_quality)
+
+        if photo_bytes:
+            res = self.tg.send_photo(
+                photo_bytes,
+                caption,
+                max_retries=max_retries,
+                retry_delay=retry_delay,
+            )
+            if res and res.get('ok'):
+                self.node.get_logger().info(
+                    f'User message successfully sent to Telegram with photo. Msg ID: {res["result"].get("message_id", "")}'
+                )
+                return True
+
+        res = self.tg.send_message(caption, max_retries=max_retries, retry_delay=retry_delay)
+        if res and res.get('ok'):
+            self.node.get_logger().info(
+                f'User message successfully sent to Telegram. Msg ID: {res["result"].get("message_id", "")}'
+            )
+            return True
+
+        self.node.get_logger().error('User message failed to send to Telegram.')
+        return False

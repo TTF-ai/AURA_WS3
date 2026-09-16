@@ -5,6 +5,8 @@ Maps validated intents to safe ROS 2 actions.
 The LLM never directly publishes ROS messages.
 """
 
+import json
+
 import rclpy
 from geometry_msgs.msg import Twist
 from std_msgs.msg import String
@@ -30,6 +32,11 @@ class IntentRouter:
         # Publisher for emergency stop
         self.emergency_stop_pub = node.create_publisher(
             Twist, "/cmd_vel", 10
+        )
+
+        # Publisher for outbound Telegram messages from a user voice request
+        self.send_message_pub = node.create_publisher(
+            String, "/aura_alert/send_message", 10
         )
 
     def execute(self, intent: str, parameters: dict, username: str) -> str:
@@ -84,6 +91,18 @@ class IntentRouter:
         # Informational intents — no ROS action needed
         return "info_only"
 
+    def _handle_send_message(self, parameters, username):
+        message = parameters.get("message") or parameters.get("text") or "No message provided."
+        include_photo = bool(parameters.get("include_photo", False))
+        payload = json.dumps({
+            "message": message,
+            "user_name": username,
+            "include_photo": include_photo,
+        })
+        self.send_message_pub.publish(String(data=payload))
+        self.node.get_logger().info(f"Intent SEND_MESSAGE executed for {username}")
+        return "message_sent"
+
     # Map intents to handlers
     _handlers = {
         "FOLLOW_USER": _handle_follow_user,
@@ -95,6 +114,7 @@ class IntentRouter:
         "WHAT_IS_MY_LANGUAGE": _handle_info,
         "HELP": _handle_info,
         "STATUS": _handle_info,
+        "SEND_MESSAGE": _handle_send_message,
         "GO_TO_LOCATION": _handle_info,  # Future implementation
         "UNKNOWN": _handle_info,
     }

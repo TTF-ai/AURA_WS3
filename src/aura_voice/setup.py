@@ -25,6 +25,7 @@ setup(
     entry_points={
         'console_scripts': [
             'voice_node = aura_voice.voice_node:main',
+            'text_input_node = aura_voice.text_input_node:main',
         ],
     },
 )

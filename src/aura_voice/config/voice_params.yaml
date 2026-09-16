@@ -22,7 +22,10 @@ voice_node:
 
     # --- Audio ---
     max_recording_seconds: 10.0
-    vad_energy_threshold: 0.01
+    # Default laptop mic input is often quiet; lower threshold so weak but real
+    # speech is not rejected before Whisper.
+    vad_energy_threshold: 0.005
+    wake_word_min_duration_ms: 150.0
 
     # --- Debug ---
     debug_audio_logging: false

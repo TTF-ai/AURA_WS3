@@ -172,6 +172,14 @@ source install/setup.bash
 ros2 launch aura_alert alert.launch.py
 
 
+source ~/venv_aura/bin/activate
+cd ~/AURA_WS3
+set -a
+source .env
+set +a
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 launch aura_alert alert.launch.py
 ----------------------------------------------------------------------------------------------------------------------------------------------------
 
 cd ~/AURA_WS3

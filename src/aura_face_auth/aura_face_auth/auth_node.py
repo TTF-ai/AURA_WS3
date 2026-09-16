@@ -57,6 +57,7 @@ class AuthNode(Node):
         self.declare_parameter("max_signal_age", 2.0)
         self.declare_parameter("face_timeout", 5.0)
         self.declare_parameter("lock_cooldown", 3.0)
+        self.declare_parameter("recovery_timeout", 15.0)
 
         self.similarity_threshold = self.get_parameter(
             "similarity_threshold"
@@ -93,6 +94,10 @@ class AuthNode(Node):
 
         self.lock_cooldown = self.get_parameter(
             "lock_cooldown"
+        ).value
+
+        self.recovery_timeout = self.get_parameter(
+            "recovery_timeout"
         ).value
 
         # ---------------------------------------------------------
@@ -154,6 +159,7 @@ class AuthNode(Node):
         self.auth_time = 0.0
         self.last_reverify_time = 0.0
         self.lock_time = 0.0
+        self.recovery_until = 0.0
 
         # Latest signals (keyed by face ID)
         self.latest_embeddings = {}
@@ -258,9 +264,10 @@ class AuthNode(Node):
 
         if self.state == AuthState.LOCKED:
             if now - self.lock_time >= self.lock_cooldown:
+                self.recovery_until = now + self.recovery_timeout
                 self.state = AuthState.UNAUTHENTICATED
                 self.get_logger().info(
-                    "Lock cooldown expired → UNAUTHENTICATED"
+                    "Lock cooldown expired → UNAUTHENTICATED | recovery window active"
                 )
             self._publish_status(now)
             return
@@ -290,7 +297,9 @@ class AuthNode(Node):
                 self._publish_status(now)
                 return
 
-            # Check face lost
+            # A brief detection miss should not immediately clear a valid
+            # authenticated user. The real lock condition is the face timeout or
+            # a failed re-verification, not a single missing face_id.
             if now - self.last_face_seen_time >= self.face_timeout:
                 self.get_logger().warning(
                     "Face lost → LOCKED"
@@ -301,11 +310,20 @@ class AuthNode(Node):
                 self._publish_status(now)
                 return
 
-            # Multi-face check
+            # Once the authenticated user is still visible and valid,
+            # keep that target locked and ignore extra people in frame.
+            if (not self.allow_multiple_faces
+                    and self.latest_num_faces > 1
+                    and self._is_authenticated_face_active(now)):
+                self._publish_status(now)
+                return
+
+            # Multi-face check: only lock if the authenticated target is no longer
+            # visible and another person is present instead.
             if (not self.allow_multiple_faces
                     and self.latest_num_faces > 1):
                 self.get_logger().warning(
-                    "Multiple faces detected → LOCKED"
+                    "Multiple faces detected and target not valid → LOCKED"
                 )
                 self.state = AuthState.LOCKED
                 self.lock_time = now
@@ -325,6 +343,14 @@ class AuthNode(Node):
         # ---------------------------------------------------------
 
         if self.latest_num_faces == 0:
+            self._publish_status(now)
+            return
+
+        if now < self.recovery_until:
+            self.get_logger().info(
+                "Recovery window active — do not authenticate another user yet",
+                throttle_duration_sec=5.0,
+            )
             self._publish_status(now)
             return
 
@@ -450,10 +476,9 @@ class AuthNode(Node):
 
     def _reverify(self, now):
         """
-        Re-verify by matching the live embedding against ALL
-        enrolled users.  This allows the system to dynamically
-        switch identity when a different enrolled person steps
-        in front of the camera.
+        Re-verify while keeping the current authenticated target locked as long as
+        that face remains valid. A different person may appear in frame, but they
+        will not replace the active user unless the original target disappears.
         """
 
         self.last_reverify_time = now
@@ -462,6 +487,20 @@ class AuthNode(Node):
             self.state = AuthState.LOCKED
             self.lock_time = now
             self._clear_auth()
+            return
+
+        # If the authenticated face is still visible and valid, keep it locked.
+        if self.authenticated_face_id >= 0 and self._is_authenticated_face_active(now):
+            self.best_similarity = max(self.best_similarity, self.similarity_threshold)
+            return
+
+        # If the authenticated target is still present in the scene, keep the
+        # current user; do not prematurely switch to another face due to a short
+        # detector gap or ID reindexing.
+        if self.authenticated_face_id >= 0 and self.latest_num_faces > 0:
+            # Keep user active while a face remains present; the timeout logic will
+            # handle actual loss after a sustained gap.
+            self.best_similarity = max(self.best_similarity, self.similarity_threshold)
             return
 
         # Find a fresh embedding
@@ -516,8 +555,8 @@ class AuthNode(Node):
             self.lock_time = now
             self._clear_auth()
         else:
-            # Switch identity if a different user matches better
-            if best_username != self.authenticated_username:
+            # Only switch identity when the current authenticated face is gone.
+            if best_username != self.authenticated_username and self.authenticated_face_id < 0:
                 self.get_logger().info(
                     f"Identity switch: "
                     f"{self.authenticated_username} → "
@@ -532,6 +571,27 @@ class AuthNode(Node):
     # =============================================================
     # HELPERS
     # =============================================================
+
+    def _is_authenticated_face_active(self, now):
+        """Return True while the currently authenticated face is still valid."""
+        if self.authenticated_face_id < 0:
+            return False
+
+        emb = self.latest_embeddings.get(self.authenticated_face_id)
+        if emb is None or now - emb["timestamp"] > self.max_signal_age:
+            return False
+
+        if emb["quality"] < self.min_quality:
+            return False
+
+        liv = self.latest_liveness.get(self.authenticated_face_id)
+        if liv is None or now - liv["timestamp"] > self.max_signal_age:
+            return False
+
+        if not liv["is_live"] or liv["score"] < self.liveness_threshold:
+            return False
+
+        return True
 
     def _clear_auth(self):
         """Clear authentication state."""

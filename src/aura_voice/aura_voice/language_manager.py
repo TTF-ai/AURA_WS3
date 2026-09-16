@@ -10,7 +10,7 @@ import os
 import sqlite3
 
 DEFAULT_DB_PATH = os.path.expanduser("~/.aura/face_auth.db")
-SUPPORTED_LANGUAGES = {"en", "kn", "en+kn"}
+SUPPORTED_LANGUAGES = {"en", "kn", "en+kn", "hi", "te", "ta", "ml", "mr", "gu", "bn"}
 DEFAULT_LANGUAGE = "en"
 
 

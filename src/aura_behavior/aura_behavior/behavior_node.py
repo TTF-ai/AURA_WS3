@@ -34,6 +34,7 @@ class BehaviorNode(Node):
         self.declare_parameter("pose_imgsz", 320)
         self.declare_parameter("pose_confidence_threshold", 0.5)
         self.declare_parameter("process_every_n_frames", 2)
+        self.declare_parameter("pose_process_every_n_frames", 4)
         self.declare_parameter("temporal_buffer_size", 30)
         self.declare_parameter("behavior_history_seconds", 1.0)
         self.declare_parameter("fall_verification_seconds", 2.0)
@@ -73,6 +74,7 @@ class BehaviorNode(Node):
         self.target_last_seen = 0.0
         self.frame_count = 0
         self.process_every_n = self.get_parameter("process_every_n_frames").value
+        self.pose_process_every_n = self.get_parameter("pose_process_every_n_frames").value
         self.debug_every_n = self.get_parameter("debug_publish_every_n").value
         self.debug_count = 0
         self.perf_logging = self.get_parameter("perf_logging").value
@@ -210,7 +212,8 @@ class BehaviorNode(Node):
             if self.frame_count % self.process_every_n != 0:
                 continue
 
-            # State-aware: skip AI when not authenticated or no target
+            # State-aware: pose inference is only enabled for an authenticated target,
+            # and runs at a slower configurable rate to reduce CPU load.
             if not self.authenticated or self.target is None:
                 # Publish debug at reduced rate so video doesn't freeze
                 self.debug_count += 1
@@ -219,6 +222,13 @@ class BehaviorNode(Node):
                 # Reset FPS timer so it doesn't count idle time
                 self.fps_start = time.time()
                 self.fps_count = 0
+                time.sleep(0.005)
+                continue
+
+            if self.frame_count % self.pose_process_every_n != 0:
+                self.debug_count += 1
+                if self.get_parameter("debug_publish").value and self.debug_count % self.debug_every_n == 0:
+                    self._publish_debug(self.latest_frame, None, None, "UNKNOWN", 0.0)
                 time.sleep(0.005)
                 continue
 

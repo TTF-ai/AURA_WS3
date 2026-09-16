@@ -1,3 +1,4 @@
+import json
 import os
 import threading
 
@@ -9,6 +10,7 @@ import rclpy
 from rclpy.node import Node
 
 from sensor_msgs.msg import Image
+from std_msgs.msg import String
 from std_srvs.srv import Trigger
 
 from .alert_state import AlertState
@@ -76,6 +78,12 @@ class AlertNode(Node):
         )
         self.event_sub = self.create_subscription(
             BehaviorEvent, '/behavior/event', self.behavior_event_callback, 10
+        )
+        self.user_message_sub = self.create_subscription(
+            String,
+            '/aura_alert/send_message',
+            self.send_custom_message_callback,
+            10,
         )
 
         # Startup test
@@ -145,6 +153,32 @@ class AlertNode(Node):
         response.success = True
         response.message = 'Test alert triggered. Check Telegram group.'
         return response
+
+    def send_custom_message_callback(self, msg: String):
+        """Handle a request to send a user message to the Telegram group."""
+        try:
+            payload = json.loads(msg.data)
+        except (TypeError, json.JSONDecodeError):
+            payload = {'message': (msg.data or '').strip(), 'include_photo': False}
+
+        text = str(payload.get('message', payload if isinstance(payload, str) else '')).strip()
+        if not text:
+            self.get_logger().warning('Ignoring empty send-message request.')
+            return
+
+        if not self.authenticated:
+            self.get_logger().warning('Message not sent: no authenticated user available.')
+            return
+
+        location = self.get_parameter('robot_location').value
+        include_photo = bool(payload.get('include_photo', False))
+        user_name = payload.get('user_name') or self.auth_username or 'Authorized User'
+
+        threading.Thread(
+            target=self.handler.handle_user_message,
+            args=(user_name, text, location, include_photo),
+            daemon=True,
+        ).start()
 
     # =============================================================
     # STATUS PUBLISHING
