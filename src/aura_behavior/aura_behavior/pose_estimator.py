@@ -12,11 +12,56 @@ Optimization:
   - Model loaded once in __init__, never inside callbacks.
 """
 
+import os
+from pathlib import Path
+
 import numpy as np
 import cv2
 import torch
 
 from ultralytics import YOLO
+
+
+def resolve_model_path(model_path):
+    """Resolve a pose model path from either an absolute path, a relative path,
+    or the workspace root. This avoids launching in the wrong working directory
+    and gives a clear error if the model file is missing or corrupted.
+    """
+    if not model_path:
+        raise ValueError("Pose model path is empty")
+
+    candidate = str(model_path)
+    if os.path.isabs(candidate) and os.path.isfile(candidate):
+        return candidate
+
+    search_roots = [
+        os.getcwd(),
+        os.path.expanduser("~/AURA_WS3"),
+        os.path.expanduser("~"),
+        os.path.dirname(os.path.abspath(__file__)),
+    ]
+
+    for root in search_roots:
+        if not root:
+            continue
+        for test_path in [
+            os.path.abspath(os.path.join(root, candidate)),
+            os.path.abspath(os.path.join(root, os.path.basename(candidate))),
+        ]:
+            if os.path.isfile(test_path):
+                return test_path
+
+    # Also walk parent directories from this file to find the repo root.
+    current = Path(__file__).resolve().parent
+    for parent in [current, *current.parents]:
+        test_path = parent / candidate
+        if test_path.is_file():
+            return str(test_path)
+
+    raise FileNotFoundError(
+        f"Pose model '{model_path}' not found. "
+        "Use an absolute path or ensure the model file exists in the workspace."
+    )
 
 
 class PoseEstimator:
@@ -28,8 +73,15 @@ class PoseEstimator:
         self.conf_thresh = conf_thresh
         self.roi_padding = roi_padding
 
-        # Load model ONCE at startup
-        self.model = YOLO(model_path)
+        resolved_path = resolve_model_path(model_path)
+        try:
+            # Load model ONCE at startup
+            self.model = YOLO(resolved_path)
+        except Exception as exc:
+            raise RuntimeError(
+                f"Unable to load pose model '{resolved_path}'. "
+                "The model file may be missing, truncated, or incompatible with this PyTorch/Ultralytics installation."
+            ) from exc
         self.device = device
 
     def estimate_pose(self, frame, target_bbox):

@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AURA Control Dashboard</title>
+    <meta
+      name="description"
+      content="AURA robot control dashboard for battery telemetry, camera, mapping, voice control, navigation, and message delivery."
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand-wrap">
+          <div class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 48 48" role="img" aria-label="AURA robot icon">
+              <rect x="10" y="18" width="28" height="18" rx="6" fill="none" stroke="currentColor" stroke-width="2.5"/>
+              <circle cx="18" cy="15" r="3.5" fill="currentColor"/>
+              <circle cx="30" cy="15" r="3.5" fill="currentColor"/>
+              <path d="M18 12V8M30 12V8M15 29H33" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+              <circle cx="17" cy="23" r="2" fill="currentColor"/>
+              <circle cx="31" cy="23" r="2" fill="currentColor"/>
+            </svg>
+          </div>
+          <div>
+            <div class="brand-name">AURA</div>
+            <div class="brand-sub">Autonomous Utility Robotic Assistance</div>
+          </div>
+        </div>
+
+        <div class="header-status">
+          <span class="status-dot connected" aria-hidden="true"></span>
+          <span class="status-label">Connected</span>
+        </div>
+      </header>
+
+      <main class="dashboard">
+        <section class="card battery-card" aria-labelledby="battery-title">
+          <div class="card-header compact-header">
+            <h2 id="battery-title">Terminal health</h2>
+            <span class="chip chip-success">Status</span>
+          </div>
+
+          <div class="battery-layout">
+            <div class="battery-meta-panel">
+              <div class="meta-row">
+                <span class="meta-label">Laptop terminal</span>
+                <span id="laptopTerminalStatus" class="meta-value neutral">Checking...</span>
+              </div>
+              <div class="meta-row">
+                <span class="meta-label">RPI 5 terminal</span>
+                <span id="rpiTerminalStatus" class="meta-value neutral">Checking...</span>
+              </div>
+              <div class="meta-row">
+                <span class="meta-label">Control state</span>
+                <span id="controlState" class="meta-value neutral">Waiting</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card camera-card" aria-labelledby="camera-title">
+          <div class="card-header compact-header">
+            <h2 id="camera-title">Live video from robot camera</h2>
+            <div class="header-actions">
+              <span class="chip chip-success" id="cameraStatusChip">Camera online</span>
+            </div>
+          </div>
+
+          <div class="video-stage" id="videoStage">
+            <video id="robotVideo" playsinline muted preload="metadata"></video>
+            <img id="cameraFrame" alt="Robot camera preview" hidden />
+            <div class="video-placeholder" id="videoPlaceholder">
+              <div class="placeholder-icon" aria-hidden="true">
+                <svg viewBox="0 0 48 48">
+                  <rect x="7" y="13" width="34" height="22" rx="4" fill="none" stroke="currentColor" stroke-width="2"/>
+                  <circle cx="24" cy="24" r="6" fill="none" stroke="currentColor" stroke-width="2"/>
+                  <path d="M14 29L21 22L28 29L36 19" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <p>Camera stream unavailable</p>
+            </div>
+          </div>
+
+          <div class="button-row multi-row">
+            <button id="toggleStreamBtn" class="primary-btn" type="button">Start Stream</button>
+            <button id="refreshCameraBtn" class="secondary-btn" type="button">Refresh</button>
+            <button id="fullscreenCameraBtn" class="secondary-btn" type="button">Fullscreen</button>
+            <button id="capturePhotoBtn" class="secondary-btn" type="button">Capture Photo</button>
+          </div>
+        </section>
+
+        <section class="card map-card" aria-labelledby="map-title">
+          <div class="card-header compact-header">
+            <h2 id="map-title">Current robot location on the map</h2>
+            <span class="chip chip-neutral">Localization</span>
+          </div>
+
+          <div class="map-stage" id="mapStage">
+            <div class="map-canvas" id="mapCanvas">
+              <div class="map-overlay placeholder-surface" id="mapPlaceholder">
+                <p>Map unavailable</p>
+                <small>Waiting for localization data</small>
+              </div>
+            </div>
+            <div class="map-legend">
+              <div><span class="legend-pill map-zone"></span>Map</div>
+              <div><span class="legend-pill robot-position"></span>Robot</div>
+            </div>
+          </div>
+
+          <div class="button-row compact-row">
+            <button class="secondary-btn" type="button" data-map-action="zoom-in">Zoom In</button>
+            <button class="secondary-btn" type="button" data-map-action="zoom-out">Zoom Out</button>
+            <button class="secondary-btn" type="button" data-map-action="reset">Reset View</button>
+          </div>
+
+          <div class="map-details">
+            <div class="meta-row">
+              <span class="meta-label">Location</span>
+              <span id="locationName" class="meta-value">Unknown</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-label">Map</span>
+              <span id="mapName" class="meta-value">No map loaded</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-label">Status</span>
+              <span id="localizationStatus" class="meta-value warning">Unlocalized</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="card voice-card" aria-labelledby="voice-title">
+          <div class="card-header compact-header">
+            <h2 id="voice-title">Voice input / Text input</h2>
+            <span class="chip chip-info">Command</span>
+          </div>
+
+          <div class="mode-toggle segmented-group" aria-label="Voice and text mode">
+            <button class="seg-btn active" type="button" data-mode="voice">Voice</button>
+            <button class="seg-btn" type="button" data-mode="text">Text</button>
+          </div>
+
+          <div class="voice-panel" data-panel="voice">
+            <div class="button-row compact-row">
+              <button id="toggleListeningBtn" class="primary-btn" type="button">Start Listening</button>
+              <button id="sendVoiceCommandBtn" class="secondary-btn" type="button">Send Command</button>
+            </div>
+            <div class="transcript-box" id="speechTranscript" aria-live="polite">No speech detected yet.</div>
+            <div class="status-row mini-status-row">
+              <span class="status-pill" id="voiceStateBadge">Idle</span>
+            </div>
+          </div>
+
+          <div class="voice-panel hidden" data-panel="text">
+            <label class="field-label" for="textCommandInput">Command</label>
+            <textarea id="textCommandInput" rows="3" maxlength="220" placeholder="Type a command..."></textarea>
+            <div class="text-actions">
+              <span class="char-counter" id="charCounter">0 / 220</span>
+              <button id="sendTextCommandBtn" class="primary-btn" type="button">Send</button>
+            </div>
+            <div class="history-list">
+              <div class="history-row">
+                <span class="history-label">Last command</span>
+                <span id="lastCommandText">None</span>
+              </div>
+              <div class="history-row">
+                <span class="history-label">Robot response</span>
+                <span id="robotResponseText">Awaiting input</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card slam-card" aria-labelledby="slam-title">
+          <div class="card-header compact-header">
+            <h2 id="slam-title">SLAM toggle</h2>
+            <span class="chip chip-neutral">Mapping</span>
+          </div>
+
+          <div class="toggle-row">
+            <span class="toggle-label">SLAM</span>
+            <button class="toggle-btn" id="slamToggle" type="button" aria-pressed="false">
+              <span class="toggle-track">
+                <span class="toggle-thumb"></span>
+              </span>
+              <span class="toggle-text">Off</span>
+            </button>
+          </div>
+
+          <div class="meta-row">
+            <span class="meta-label">SLAM status</span>
+            <span id="slamStatus" class="meta-value neutral">Unknown</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">Map building</span>
+            <span id="slamMapStatus" class="meta-value neutral">Idle</span>
+          </div>
+
+          <div class="button-row compact-row">
+            <button class="primary-btn" id="startSlamBtn" type="button">Start</button>
+            <button class="secondary-btn" id="stopSlamBtn" type="button">Stop</button>
+          </div>
+        </section>
+
+        <section class="card semantic-card" aria-labelledby="semantic-title">
+          <div class="card-header compact-header">
+            <h2 id="semantic-title">SLAM + Semantic Mapping toggle</h2>
+            <span class="chip chip-neutral">AI mapping</span>
+          </div>
+
+          <div class="toggle-row">
+            <span class="toggle-label">Semantic map</span>
+            <button class="toggle-btn" id="semanticToggle" type="button" aria-pressed="false">
+              <span class="toggle-track">
+                <span class="toggle-thumb"></span>
+              </span>
+              <span class="toggle-text">Off</span>
+            </button>
+          </div>
+
+          <div class="meta-row">
+            <span class="meta-label">Semantic map</span>
+            <span id="semanticStatus" class="meta-value neutral">Inactive</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">Processing</span>
+            <span id="semanticProgress" class="meta-value neutral">Idle</span>
+          </div>
+
+          <div class="button-row compact-row">
+            <button class="primary-btn" id="startSemanticBtn" type="button">Start</button>
+            <button class="secondary-btn" id="stopSemanticBtn" type="button">Stop</button>
+          </div>
+        </section>
+
+        <section class="card navigation-card" aria-labelledby="nav-title">
+          <div class="card-header compact-header">
+            <h2 id="nav-title">Navigate to a room</h2>
+            <span class="chip chip-info">Navigation</span>
+          </div>
+
+          <label class="field-label" for="roomSelect">Destination</label>
+          <select id="roomSelect" aria-label="Select destination room">
+            <option value="">Loading rooms...</option>
+          </select>
+
+          <div class="meta-row">
+            <span class="meta-label">Selected</span>
+            <span id="selectedRoomText" class="meta-value">None</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">Navigation</span>
+            <span id="navState" class="meta-value neutral">Idle</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">Result</span>
+            <span id="navResult" class="meta-value">No destination</span>
+          </div>
+
+          <div class="button-row compact-row">
+            <button id="navigateBtn" class="primary-btn" type="button">Navigate</button>
+            <button id="cancelNavBtn" class="secondary-btn" type="button">Cancel</button>
+          </div>
+        </section>
+
+        <section class="card photo-card" aria-labelledby="photo-title">
+          <div class="card-header compact-header">
+            <h2 id="photo-title">Send photo to a group</h2>
+            <span class="chip chip-success">Media</span>
+          </div>
+
+          <div class="photo-preview-shell">
+            <img id="capturedPhoto" alt="Captured robot photo preview" hidden />
+            <div id="photoPlaceholder" class="photo-placeholder">
+              <span>No photo available</span>
+            </div>
+          </div>
+
+          <div class="button-row compact-row">
+            <button id="captureSendPhotoBtn" class="primary-btn" type="button">Capture Photo</button>
+          </div>
+
+          <label class="field-label" for="groupPhotoMessage">Message</label>
+          <textarea id="groupPhotoMessage" rows="2" maxlength="220" placeholder="Add a message for the group..."></textarea>
+
+          <button id="sendPhotoMessageBtn" class="primary-btn full-width" type="button" disabled>
+            Send Photo + Message
+          </button>
+          <div class="status-row">
+            <span id="photoDeliveryStatus" class="status-pill neutral">No photo</span>
+          </div>
+        </section>
+
+        <section class="card message-card" aria-labelledby="message-title">
+          <div class="card-header compact-header">
+            <h2 id="message-title">Send message to a group</h2>
+            <span class="chip chip-info">Group</span>
+          </div>
+
+          <label class="field-label" for="groupMessageInput">Message</label>
+          <textarea id="groupMessageInput" rows="4" maxlength="500" placeholder="Type a message to send to the group..."></textarea>
+
+          <div class="text-actions">
+            <span class="char-counter" id="groupMessageCounter">0 / 500</span>
+            <button id="sendGroupMessageBtn" class="primary-btn" type="button">Send Message</button>
+          </div>
+          <div class="status-row">
+            <span id="groupMessageStatus" class="status-pill neutral">Ready</span>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <noscript>
+      <div class="noscript-banner">This dashboard requires JavaScript to be enabled.</div>
+    </noscript>
+
+    <script src="script.js"></script>
+  </body>
+</html>

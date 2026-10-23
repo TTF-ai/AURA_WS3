@@ -93,7 +93,7 @@ class FaceDetectorNode(Node):
 
         self.image_sub = self.create_subscription(
             Image,
-            "/camera/image_raw",
+            "/camera/image",
             self.image_callback,
             10
         )

@@ -8,7 +8,7 @@ camera_node:
     frame_height: 480
     fps: 30
 
-face_detector_node:
+face_dete:
   ros__parameters:
     det_thresh: 0.5
     det_size: 640

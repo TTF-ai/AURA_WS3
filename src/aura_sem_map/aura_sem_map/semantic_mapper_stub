@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+set -e
+exec python3 -m aura_sem_map.semantic_mapper "$@"

@@ -16,7 +16,7 @@ Version 1 limitation:
   following another person.
 
 Subscribes:
-  /camera/image_raw   (sensor_msgs/Image)
+  /camera/image       (sensor_msgs/Image)
   /scan               (sensor_msgs/LaserScan)
   /auth/status        (aura_face_msgs/AuthenticationStatus)
   /face/detections    (aura_face_msgs/FaceDetections)
@@ -173,7 +173,7 @@ class HumanFollowNode(Node):
 
         self.image_sub = self.create_subscription(
             Image,
-            "/camera/image_raw",
+            "/camera/image",
             self.image_callback,
             qos_profile_sensor_data
         )
@@ -182,7 +182,7 @@ class HumanFollowNode(Node):
             LaserScan,
             "/scan",
             self.scan_callback,
-            10
+            qos_profile_sensor_data
         )
 
         self.auth_sub = self.create_subscription(
@@ -741,6 +741,10 @@ class HumanFollowNode(Node):
 
         if target_distance is None:
             # No valid LiDAR — stop
+            self.get_logger().warning(
+                f"No valid LiDAR distance for target track_id={self.target_track_id}; stopping follow.",
+                throttle_duration_sec=5.0,
+            )
             self._publish_zero_vel()
             return
 
@@ -750,6 +754,10 @@ class HumanFollowNode(Node):
 
         # Emergency stop
         if target_distance < self.emergency_distance:
+            self.get_logger().warning(
+                f"Emergency stop: target_distance={target_distance:.2f}m < emergency_distance={self.emergency_distance:.2f}m",
+                throttle_duration_sec=5.0,
+            )
             self._publish_zero_vel()
             return
 
@@ -780,6 +788,10 @@ class HumanFollowNode(Node):
         # ---------------------------------------------------------
 
         if self._frontal_obstacle_detected():
+            self.get_logger().warning(
+                "Frontal obstacle in safety cone; zeroing linear velocity.",
+                throttle_duration_sec=5.0,
+            )
             linear_x = 0.0
 
         # ---------------------------------------------------------
@@ -789,6 +801,10 @@ class HumanFollowNode(Node):
         twist = Twist()
         twist.linear.x = float(linear_x)
         twist.angular.z = float(angular_z)
+        self.get_logger().debug(
+            f"Target track_id={self.target_track_id} | dist={target_distance:.2f}m | "
+            f"linear_x={linear_x:.3f} | angular_z={angular_z:.3f}"
+        )
         self.cmd_vel_pub.publish(twist)
 
     # =============================================================
@@ -808,31 +824,28 @@ class HumanFollowNode(Node):
 
         scan = self.latest_scan
 
-        # Convert pixel position to camera-relative angle
-        # Left of center = positive angle
+        # Convert pixel position to camera-relative angle.
+        # Use the camera field of view as the minimum LiDAR search window so
+        # a valid target near the image edge is not discarded.
         image_center = self.image_width / 2.0
         pixel_offset = target_pixel_x - image_center
-
-        # Camera FOV to radians
         hfov_rad = math.radians(self.camera_hfov_deg)
 
-        # Pixel offset to angle
-        # Negative because camera right = lidar left convention
+        # Negative because camera right = lidar left convention.
         target_angle_rad = -(
             pixel_offset / image_center
         ) * (hfov_rad / 2.0)
 
-        # LiDAR angular window
-        window_rad = math.radians(
-            self.lidar_angle_window_deg
+        search_window_deg = max(
+            float(self.lidar_angle_window_deg),
+            float(self.camera_hfov_deg) * 0.75,
         )
+        window_rad = math.radians(search_window_deg)
 
         angle_min_search = target_angle_rad - window_rad / 2.0
         angle_max_search = target_angle_rad + window_rad / 2.0
 
-        # Collect valid ranges in the angular window
         valid_ranges = []
-
         for i, r in enumerate(scan.ranges):
             angle = scan.angle_min + i * scan.angle_increment
 
@@ -844,11 +857,25 @@ class HumanFollowNode(Node):
                     valid_ranges.append(r)
 
         if len(valid_ranges) == 0:
+            self.get_logger().warning(
+                "LiDAR target window empty: "
+                f"target_pixel_x={target_pixel_x:.1f}, "
+                f"target_angle_deg={math.degrees(target_angle_rad):.1f}, "
+                f"scan_window_deg=[{math.degrees(angle_min_search):.1f},{math.degrees(angle_max_search):.1f}], "
+                f"valid_samples=0, reason=no_valid_lidar_range",
+                throttle_duration_sec=5.0,
+            )
             return None
 
-        # Use median for robustness
         distance = float(np.median(valid_ranges))
-
+        self.get_logger().debug(
+            "LiDAR target estimate: "
+            f"target_pixel_x={target_pixel_x:.1f}, "
+            f"target_angle_deg={math.degrees(target_angle_rad):.1f}, "
+            f"scan_window_deg=[{math.degrees(angle_min_search):.1f},{math.degrees(angle_max_search):.1f}], "
+            f"valid_samples={len(valid_ranges)}, estimated_distance={distance:.2f}m",
+            throttle_duration_sec=5.0,
+        )
         return distance
 
     # =============================================================
@@ -1059,3 +1086,4 @@ def main(args=None):
 
 if __name__ == "__main__":
     main()
+

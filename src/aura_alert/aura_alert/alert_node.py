@@ -71,7 +71,7 @@ class AlertNode(Node):
         # Subscribers
         # -------------------------------------------------------
         self.image_sub = self.create_subscription(
-            Image, '/camera/image_raw', self.image_callback, 10
+            Image, '/camera/image', self.image_callback, 10
         )
         self.auth_sub = self.create_subscription(
             AuthenticationStatus, '/auth/status', self.auth_callback, 10

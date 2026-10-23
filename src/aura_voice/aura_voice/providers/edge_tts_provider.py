@@ -30,7 +30,7 @@ class EdgeTTS(TTSProvider):
         "ta+en": "ta-IN-PallaviNeural",
     }
 
-    def __init__(self, timeout: float = 10.0, **kwargs):
+    def __init__(self, timeout: float = 20.0, **kwargs):
         self.timeout = timeout
 
     @staticmethod
@@ -63,11 +63,16 @@ class EdgeTTS(TTSProvider):
         """Run edge-tts asynchronously and collect audio bytes."""
         communicate = edge_tts.Communicate(text, voice)
         audio_data = bytearray()
-        
+
         async for chunk in communicate.stream():
-            if chunk["type"] == "audio":
-                audio_data.extend(chunk["data"])
-                
+            if chunk.get("type") == "audio":
+                audio_data.extend(chunk.get("data", b""))
+
+        if not audio_data:
+            raise RuntimeError(
+                "No audio was received from Edge TTS. The service may be temporarily unavailable or rate-limited."
+            )
+
         return bytes(audio_data)
 
     def synthesize(self, text: str, language: str = "en", voice: str = None) -> bytes:
@@ -79,7 +84,21 @@ class EdgeTTS(TTSProvider):
             )
 
         selected_voice = voice or self.VOICES[normalized_language]
-        return asyncio.run(self._async_synthesize(text, selected_voice))
+
+        last_error = None
+        for attempt in range(2):
+            try:
+                return asyncio.run(asyncio.wait_for(self._async_synthesize(text, selected_voice), timeout=self.timeout))
+            except asyncio.TimeoutError as exc:
+                last_error = exc
+            except Exception as exc:  # noqa: BLE001
+                last_error = exc
+                if attempt == 1:
+                    raise
+
+        if last_error is not None:
+            raise RuntimeError(f"Edge TTS synthesis failed: {last_error}") from last_error
+        return b""
 
     def supports_language(self, language: str) -> bool:
         """Check if this provider supports the given language."""

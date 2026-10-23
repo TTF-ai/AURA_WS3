@@ -36,6 +36,7 @@ setup(
             "liveness_node = aura_face_auth.liveness_node:main",
             "auth_node = aura_face_auth.auth_node:main",
             "enroll_node = aura_face_auth.enroll_node:main",
+            "jpeg_decoder_node = aura_face_auth.jpeg_decoder_node:main",
         ],
     },
 )

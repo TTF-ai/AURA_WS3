@@ -1,0 +1,406 @@
+.
+├── build.log
+├── Cmds.txt
+├── np
+├── pose_landmarker_lite.task
+├── rclpy
+├── requirements.txt
+├── ros2_structure.txt
+├── scripts
+│   ├── README.md
+│   ├── start_aura_all.sh
+│   ├── start_laptop.sh
+│   ├── start_rpi.sh
+│   ├── status_aura.sh
+│   └── stop_aura_all.sh
+├── src
+│   ├── aura_alert
+│   │   ├── aura_alert
+│   │   │   ├── alert_node.py
+│   │   │   ├── alert_state.py
+│   │   │   ├── event_handler.py
+│   │   │   ├── image_capture.py
+│   │   │   ├── __init__.py
+│   │   │   ├── message_builder.py
+│   │   │   └── telegram_client.py
+│   │   ├── config
+│   │   │   └── alert_params.yaml
+│   │   ├── launch
+│   │   │   └── alert.launch.py
+│   │   ├── package.xml
+│   │   ├── README.md
+│   │   ├── resource
+│   │   │   └── aura_alert
+│   │   ├── setup.cfg
+│   │   ├── setup.py
+│   │   └── test
+│   │       ├── test_alert.py
+│   │       ├── test_copyright.py
+│   │       ├── test_flake8.py
+│   │       ├── test_message_builder.py
+│   │       ├── test_pep257.py
+│   │       └── test_telegram_client.py
+│   ├── aura_alert_msgs
+│   │   ├── CMakeLists.txt
+│   │   ├── include
+│   │   │   └── aura_alert_msgs
+│   │   ├── msg
+│   │   │   └── AlertStatus.msg
+│   │   ├── package.xml
+│   │   └── src
+│   ├── aura_behavior
+│   │   ├── aura_behavior
+│   │   │   ├── behavior_classifier.py
+│   │   │   ├── behavior_node.py
+│   │   │   ├── fall_detector.py
+│   │   │   ├── __init__.py
+│   │   │   ├── pose_estimator.py
+│   │   │   ├── temporal_buffer.py
+│   │   │   └── utils.py
+│   │   ├── config
+│   │   │   └── behavior_params.yaml
+│   │   ├── launch
+│   │   │   └── behavior.launch.py
+│   │   ├── package.xml
+│   │   ├── resource
+│   │   │   └── aura_behavior
+│   │   ├── setup.cfg
+│   │   ├── setup.py
+│   │   └── test
+│   │       ├── test_copyright.py
+│   │       ├── test_flake8.py
+│   │       └── test_pep257.py
+│   ├── aura_behavior_msgs
+│   │   ├── CMakeLists.txt
+│   │   ├── include
+│   │   │   └── aura_behavior_msgs
+│   │   ├── msg
+│   │   │   ├── BehaviorEvent.msg
+│   │   │   └── BehaviorState.msg
+│   │   ├── package.xml
+│   │   └── src
+│   ├── aura_bringup
+│   │   ├── aura_bringup
+│   │   │   └── __init__.py
+│   │   ├── config
+│   │   │   └── ydlidar.yaml
+│   │   ├── launch
+│   │   │   ├── robot.launch.py
+│   │   │   └── slam.launch.py
+│   │   ├── package.xml
+│   │   ├── resource
+│   │   │   └── aura_bringup
+│   │   ├── setup.cfg
+│   │   └── setup.py
+│   ├── aura_description
+│   │   ├── CMakeLists.txt
+│   │   ├── launch
+│   │   │   └── display.launch.py
+│   │   ├── package.xml
+│   │   └── urdf
+│   │       ├── aura.urdf.xacro
+│   │       ├── materials.xacro
+│   │       ├── sensors.xacro
+│   │       └── wheels.xacro
+│   ├── aura_exploration
+│   │   ├── aura_exploration
+│   │   │   ├── frontier_explorer.py
+│   │   │   └── __init__.py
+│   │   ├── config
+│   │   │   └── frontier_explorer.yaml
+│   │   ├── launch
+│   │   │   └── exploration.launch.py
+│   │   ├── package.xml
+│   │   ├── resource
+│   │   │   └── aura_exploration
+│   │   ├── setup.cfg
+│   │   └── setup.py
+│   ├── aura_face_auth
+│   │   ├── aura_face_auth
+│   │   │   ├── auth_node.py
+│   │   │   ├── camera_node.py
+│   │   │   ├── database.py
+│   │   │   ├── enroll_node.py
+│   │   │   ├── face_detector_node.py
+│   │   │   ├── __init__.py
+│   │   │   ├── jpeg_decoder_node.py
+│   │   │   ├── liveness_node.py
+│   │   │   ├── models
+│   │   │   ├── recognizer_node.py
+│   │   │   └── utils.py
+│   │   ├── config
+│   │   │   └── face_auth_params.yaml
+│   │   ├── launch
+│   │   │   └── face_auth.launch.py
+│   │   ├── package.xml
+│   │   ├── resource
+│   │   │   └── aura_face_auth
+│   │   ├── setup.cfg
+│   │   ├── setup.py
+│   │   └── test
+│   │       ├── test_auth_lock_logic.py
+│   │       ├── test_copyright.py
+│   │       ├── test_flake8.py
+│   │       └── test_pep257.py
+│   ├── aura_face_msgs
+│   │   ├── CMakeLists.txt
+│   │   ├── include
+│   │   │   └── aura_face_msg
+│   │   ├── msg
+│   │   │   ├── AuthenticationStatus.msg
+│   │   │   ├── FaceCrop.msg
+│   │   │   ├── FaceDetection.msg
+│   │   │   ├── FaceDetections.msg
+│   │   │   ├── FaceEmbedding.msg
+│   │   │   └── FaceLiveness.msg
+│   │   ├── package.xml
+│   │   └── src
+│   ├── aura_follow
+│   │   ├── aura_follow
+│   │   │   ├── human_follow_node.py
+│   │   │   └── __init__.py
+│   │   ├── config
+│   │   │   └── follow_params.yaml
+│   │   ├── launch
+│   │   │   └── human_follow.launch.py
+│   │   ├── package.xml
+│   │   ├── resource
+│   │   │   └── aura_follow
+│   │   ├── setup.cfg
+│   │   ├── setup.py
+│   │   └── test
+│   ├── aura_follow_msgs
+│   │   ├── CMakeLists.txt
+│   │   ├── include
+│   │   │   └── aura_follow_msgs
+│   │   ├── msg
+│   │   │   └── TargetPerson.msg
+│   │   ├── package.xml
+│   │   └── src
+│   ├── aura_navigation
+│   │   ├── config
+│   │   │   └── nav2_params.yaml
+│   │   ├── launch
+│   │   │   └── navigation.launch.py
+│   │   ├── package.xml
+│   │   ├── resource
+│   │   │   └── aura_navigation
+│   │   ├── setup.cfg
+│   │   └── setup.py
+│   ├── aura_odom
+│   │   ├── aura_odom
+│   │   │   ├── __init__.py
+│   │   │   └── wheel_odom.py
+│   │   ├── package.xml
+│   │   ├── resource
+│   │   │   └── aura_odom
+│   │   ├── setup.cfg
+│   │   └── setup.py
+│   ├── aura_robot_hw
+│   │   ├── aura_robot_hw
+│   │   │   ├── esp32_bridge.py
+│   │   │   └── __init__.py
+│   │   ├── package.xml
+│   │   ├── resource
+│   │   │   └── aura_robot_hw
+│   │   ├── setup.cfg
+│   │   ├── setup.py
+│   │   └── test
+│   │       ├── test_copyright.py
+│   │       ├── test_flake8.py
+│   │       └── test_pep257.py
+│   ├── aura_robot_msgs
+│   │   ├── CMakeLists.txt
+│   │   ├── include
+│   │   │   └── aura_robot_msgs
+│   │   ├── msg
+│   │   │   ├── WheelEncoderArray.msg
+│   │   │   └── WheelEncoder.msg
+│   │   ├── package.xml
+│   │   └── src
+│   ├── aura_slam
+│   │   ├── CMakeLists.txt
+│   │   ├── config
+│   │   │   └── slam_toolbox.yaml
+│   │   ├── launch
+│   │   │   └── slam.launch.py
+│   │   └── package.xml
+│   ├── aura_voice
+│   │   ├── aura_voice
+│   │   │   ├── audio_capture.py
+│   │   │   ├── audio_player.py
+│   │   │   ├── __init__.py
+│   │   │   ├── intent_router.py
+│   │   │   ├── language_manager.py
+│   │   │   ├── providers
+│   │   │   ├── text_input_node.py
+│   │   │   ├── vad.py
+│   │   │   └── voice_node.py
+│   │   ├── config
+│   │   │   └── voice_params.yaml
+│   │   ├── launch
+│   │   │   └── voice.launch.py
+│   │   ├── package.xml
+│   │   ├── resource
+│   │   │   └── aura_voice
+│   │   ├── setup.cfg
+│   │   ├── setup.py
+│   │   └── test
+│   │       ├── test_copyright.py
+│   │       ├── test_flake8.py
+│   │       ├── test_pep257.py
+│   │       └── test_voice_wake_word.py
+│   ├── aura_voice_msgs
+│   │   ├── CMakeLists.txt
+│   │   ├── include
+│   │   │   └── aura_voice_msgs
+│   │   ├── msg
+│   │   │   ├── Transcript.msg
+│   │   │   ├── VoiceIntent.msg
+│   │   │   └── VoiceStatus.msg
+│   │   ├── package.xml
+│   │   └── src
+│   ├── ydlidar_ros2_driver
+│   │   ├── CMakeLists.txt
+│   │   ├── config
+│   │   │   └── ydlidar.rviz
+│   │   ├── details.md
+│   │   ├── images
+│   │   │   ├── cmake_error.png
+│   │   │   ├── EAI.png
+│   │   │   ├── finished.png
+│   │   │   ├── rviz.png
+│   │   │   ├── view.png
+│   │   │   └── YDLidar.jpg
+│   │   ├── launch
+│   │   │   ├── ydlidar_launch.py
+│   │   │   ├── ydlidar_launch_view.py
+│   │   │   └── ydlidar.py
+│   │   ├── LICENSE.txt
+│   │   ├── package.xml
+│   │   ├── params
+│   │   │   ├── G1.yaml
+│   │   │   ├── G2.yaml
+│   │   │   ├── G4.yaml
+│   │   │   ├── G6.yaml
+│   │   │   ├── GS2.yaml
+│   │   │   ├── GS5.yaml
+│   │   │   ├── sdm15.yaml
+│   │   │   ├── TEA.yaml
+│   │   │   ├── TG.yaml
+│   │   │   ├── Tmini-Plus-SH.yaml
+│   │   │   ├── Tmini.yaml
+│   │   │   ├── X2.yaml
+│   │   │   ├── X3.yaml
+│   │   │   ├── X4-Pro.yaml
+│   │   │   ├── X4.yaml
+│   │   │   └── ydlidar.yaml
+│   │   ├── README.md
+│   │   ├── src
+│   │   │   ├── ydlidar_ros2_driver_client.cpp
+│   │   │   └── ydlidar_ros2_driver_node.cpp
+│   │   └── startup
+│   │       └── initenv.sh
+│   └── YDLidar-SDK
+│       ├── cmake
+│       │   ├── cmake_uninstall.cmake.in
+│       │   ├── common
+│       │   ├── FindPackage.cmake.in
+│       │   ├── install_package.cmake
+│       │   ├── PackageConfig.cmake.in
+│       │   ├── PackageConfigVersion.cmake.in
+│       │   ├── PkgConfig.pc.in
+│       │   └── script_show_final_summary.cmake
+│       ├── CMakeLists.txt
+│       ├── core
+│       │   ├── base
+│       │   ├── CMakeLists.txt
+│       │   ├── common
+│       │   ├── json
+│       │   ├── math
+│       │   ├── network
+│       │   └── serial
+│       ├── csharp
+│       │   ├── CMakeLists.txt
+│       │   ├── examples
+│       │   └── ydlidar_sdk.i
+│       ├── doc
+│       │   ├── Dataset.md
+│       │   ├── Diagram.md
+│       │   ├── FAQs
+│       │   ├── howto
+│       │   ├── images
+│       │   ├── quickstart
+│       │   ├── README.md
+│       │   ├── SDK.pdf
+│       │   ├── tutorials
+│       │   ├── Tutorials.md
+│       │   ├── YDLIDAR_SDK_API_for_Developers.md
+│       │   ├── YDLidar-SDK-Communication-Protocol.html
+│       │   ├── YDLidar-SDK-Communication-Protocol.md
+│       │   ├── YDLidar-SDK-Communication-Protocol.pdf
+│       │   └── YDLidar_SDK_Communication_Protocol.pdf
+│       ├── Doxyfile
+│       ├── examples
+│       │   ├── CMakeLists.txt
+│       │   ├── data
+│       │   ├── et_test.cpp
+│       │   ├── gs_ota.cpp
+│       │   ├── gs_restart.cpp
+│       │   ├── gs_test2.cpp
+│       │   ├── gs_test.cpp
+│       │   ├── lidar_c_api_test.c
+│       │   ├── scl_test.cpp
+│       │   ├── sdm18_test.cpp
+│       │   ├── sdm_test.cpp
+│       │   ├── tea_test.cpp
+│       │   ├── tia_test.cpp
+│       │   ├── tmini-sh_test.cpp
+│       │   ├── tmini_test.cpp
+│       │   ├── tof_test.cpp
+│       │   ├── tri_and_gs_test.cpp
+│       │   ├── tri_restart.cpp
+│       │   └── tri_test.cpp
+│       ├── LICENSE.txt
+│       ├── python
+│       │   ├── CMakeLists.txt
+│       │   ├── examples
+│       │   ├── numpy.i
+│       │   ├── test
+│       │   └── ydlidar_sdk.i
+│       ├── README.md
+│       ├── README.pdf
+│       ├── setup.py
+│       ├── src
+│       │   ├── CMakeLists.txt
+│       │   ├── CYdLidar.cpp
+│       │   ├── CYdLidar.h
+│       │   ├── DTSLidarDriver.cpp
+│       │   ├── DTSLidarDriver.h
+│       │   ├── ETLidarDriver.cpp
+│       │   ├── ETLidarDriver.h
+│       │   ├── filters
+│       │   ├── GSLidarDriver.cpp
+│       │   ├── GSLidarDriver.h
+│       │   ├── SDMLidarDriver.cpp
+│       │   ├── SDMLidarDriver.h
+│       │   ├── TiaLidarDriver.cpp
+│       │   ├── TiaLidarDriver.h
+│       │   ├── YDlidarDriver.cpp
+│       │   ├── YDlidarDriver.h
+│       │   ├── ydlidar_sdk.cpp
+│       │   └── ydlidar_sdk.h
+│       ├── startup
+│       │   └── initenv.sh
+│       ├── test
+│       │   ├── CMakeLists.txt
+│       │   ├── lidar_test.cpp
+│       │   └── lidar_test.h
+│       └── ydlidar_config.h.in
+├── start_aura.sh
+├── test_detect.py
+├── yolo11n.onnx
+├── yolo11n-pose.pt
+└── yolo11n.pt
+
+126 directories, 278 files

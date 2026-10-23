@@ -1,0 +1,10 @@
+semantic_mapper:
+  ros__parameters:
+    camera_topic: /camera/image
+    # camera_topic: /dev/video0
+    model_path: yolov8n.pt
+    confidence_threshold: 0.35
+    process_every_n_frames: 2
+    observation_window_sec: 5.0
+    debug_image_topic: /semantic_map/debug
+    summary_topic: /semantic_map/summary

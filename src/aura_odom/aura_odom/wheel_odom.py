@@ -22,6 +22,7 @@ class WheelOdom(Node):
         self.track_width = self.get_parameter('track_width').value
         self.counts_per_rev = self.get_parameter('counts_per_revolution').value
         self.reset_threshold = self.get_parameter('encoder_reset_threshold').value
+        self.motion_noise_threshold_counts = 2.0
         
         # State
         self.prev_left_counts = None
@@ -55,6 +56,10 @@ class WheelOdom(Node):
                 rl = float(enc['RL']['count'])
                 fr = float(enc['FR']['count'])
                 rr = float(enc['RR']['count'])
+
+                if not all(math.isfinite(v) for v in (fl, rl, fr, rr)):
+                    self.get_logger().warn("Ignoring invalid encoder counts from /esp32/data")
+                    return
                 
                 # Average left and right
                 left_counts = (fl + rl) / 2.0
@@ -71,6 +76,12 @@ class WheelOdom(Node):
                 # Calculate deltas
                 delta_left = left_counts - self.prev_left_counts
                 delta_right = right_counts - self.prev_right_counts
+
+                # Reject encoder jitter/noise while the robot is physically stationary.
+                if abs(delta_left) < self.motion_noise_threshold_counts and abs(delta_right) < self.motion_noise_threshold_counts:
+                    self.prev_left_counts = left_counts
+                    self.prev_right_counts = right_counts
+                    return
                 
                 # Check for large jumps/resets
                 if abs(delta_left) > self.reset_threshold or abs(delta_right) > self.reset_threshold:

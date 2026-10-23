@@ -36,8 +36,8 @@ Brlapi==0.8.5
 Brotli==1.1.0
 builtin-interfaces==2.0.4
 cartographer-ros-msgs==2.0.9003
-catkin-pkg==1.1.0
-catkin-pkg-modules==1.1.0
+catkin-pkg
+catkin-pkg-modules
 certifi==2023.11.17
 cffi==2.1.1
 chardet==5.2.0
@@ -207,7 +207,7 @@ proton-vpn-daemon==0.13.8
 proton-vpn-gtk-app==4.18.1
 psutil==5.9.8
 ptyprocess==0.7.0
-PyAudio==0.2.13
+PyAudio
 pybind11==2.11.1
 pycairo==1.25.1
 pycares==4.4.0

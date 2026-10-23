@@ -4,7 +4,7 @@
 behavior_node:
   ros__parameters:
     # --- Pose Model ---
-    pose_model: "yolo11n-pose.pt"
+    pose_model: "/home/thirumalesh/AURA_WS3/yolo11n-pose.pt"
     pose_imgsz: 320
     pose_confidence_threshold: 0.5
 

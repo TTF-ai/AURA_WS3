@@ -52,7 +52,7 @@ def generate_launch_description():
     use_camera_arg = DeclareLaunchArgument(
         "use_internal_camera",
         default_value="true",
-        description="Launch the internal camera node"
+        description="Launch the internal laptop camera node; set to false when using the Pi camera stream"
     )
 
     dev_mode_arg = DeclareLaunchArgument(

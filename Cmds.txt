@@ -114,6 +114,7 @@ ros2 run rqt_image_view rqt_image_view
 
 <_________________________________THIS IS AURA LAUNCH FILES TO EXECUTE________________________________>
 
+
 1. Face Authentication Node
 
 source ~/venv_aura/bin/activate
@@ -229,3 +230,6 @@ ros2 launch aura_behavior behavior.launch.py
 
 # Run voice node in the other:
 ros2 launch aura_voice voice.launch.py
+
+
+ssh robo@172.16.44.218
